@@ -1,3 +1,4 @@
+
 # Federated Learning — Phase 1: FedAvg Baseline
 
 Implements the **Federated Averaging (FedAvg)** algorithm from scratch, faithful to
@@ -41,3 +42,6 @@ Results (accuracy/loss curves) are saved to `results/`.
 
 McMahan, H.B., Moore, E., Ramage, D., Hampson, S. and Agüera y Arcas, B., 2017.
 *Communication-efficient learning of deep networks from decentralized data.* AISTATS.
+
+
+
