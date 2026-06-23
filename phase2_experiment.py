@@ -1,6 +1,5 @@
-"""
-phase2_experiment.py
-====================
+"""phase2_experiment.py
+===================
 Phase 2 -- FedAvg Experiment Runner (CIFAR-10, 100 clients)
 
 Runs three back-to-back experiments and generates a comparison plot:
@@ -15,7 +14,7 @@ Each experiment:
   - Saves accuracy and loss curves
 
 Final output: results/phase2/comparison_accuracy.png
-              results/phase2/comparison_loss.png
+               results/phase2/comparison_loss.png
 
 Usage
 -----
@@ -115,26 +114,28 @@ def train_client(
     batch_size: int,
     lr: float,
     device: torch.device,
+    algorithm: str = "fedavg",
+    proximal_mu: float = 0.0,
 ) -> Tuple[List[np.ndarray], float, float, int]:
-    """Train a local model on a client's data for E epochs.
+    """Train a local model on a client's data.
 
     Parameters
     ----------
     model : nn.Module
-        The global model (already loaded with server weights).
+        Global model (will be copied per client).
     subset : Subset
         Client's local dataset.
     n_epochs : int
         Number of local training epochs.
     batch_size : int
-        Mini-batch size.
+        Mini‑batch size.
     lr : float
         Learning rate for SGD.
     device : torch.device
-
-    Returns
-    -------
-    (updated_weights, avg_loss, avg_acc, n_samples)
+    algorithm : str, optional
+        "fedavg" (default) or "fedprox".
+    proximal_mu : float, optional
+        Coefficient for FedProx proximal term (default 0.0 – no effect).
     """
     model.train()
     loader = DataLoader(
@@ -144,9 +145,12 @@ def train_client(
         num_workers=0,
         pin_memory=(device.type == "cuda"),
     )
-    # Fresh optimizer each round -- no stale momentum
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss()
+
+    # Store a copy of the global weights for the proximal term (if needed)
+    if algorithm == "fedprox":
+        global_params = [p.clone().detach() for p in model.parameters()]
 
     total_loss = 0.0
     total_correct = 0
@@ -158,17 +162,22 @@ def train_client(
             optimizer.zero_grad()
             logits = model(images)
             loss = criterion(logits, labels)
+            # FedProx proximal term
+            if algorithm == "fedprox":
+                prox_term = 0.0
+                for w, w0 in zip(model.parameters(), global_params):
+                    prox_term += ((w - w0) ** 2).sum()
+                loss = loss + (proximal_mu / 2.0) * prox_term
             loss.backward()
             optimizer.step()
 
-            batch_size_actual = labels.size(0)
-            total_loss += loss.item() * batch_size_actual
+            batch_sz = labels.size(0)
+            total_loss += loss.item() * batch_sz
             total_correct += (logits.argmax(dim=1) == labels).sum().item()
-            total_samples += batch_size_actual
+            total_samples += batch_sz
 
     avg_loss = total_loss / max(total_samples, 1)
     avg_acc = total_correct / max(total_samples, 1)
-
     return get_weights(model), avg_loss, avg_acc, len(subset)
 
 
@@ -262,8 +271,10 @@ def run_experiment(
     dp: DataPartitioner,
     rng: random.Random,
     n_rounds: int = N_ROUNDS,
+    algorithm: str = "fedavg",
+    proximal_mu: float = 0.01,
 ) -> RoundLogger:
-    """Run a complete FedAvg experiment and return the populated logger.
+    """Run a complete FedAvg/FedProx experiment and return the populated logger.
 
     Parameters
     ----------
@@ -330,6 +341,8 @@ def run_experiment(
                 BATCH_SIZE,
                 LEARNING_RATE,
                 DEVICE,
+                algorithm=algorithm,
+                proximal_mu=proximal_mu,
             )
             client_weights_list.append(updated_w)
             client_sizes.append(n_samples)

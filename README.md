@@ -42,19 +42,23 @@ uv run python phase2_experiment.py
 
 ## Phase 3: FedProx Experiments
 
-- **Task**: CIFAR-10
+- **Task**: CIFAR-10 (Dirichlet $\alpha=0.1$, 100 clients, C=0.1)
 - **Model**: ResNet-8
-- **Algorithm**: FedProx (proximal term μ)
-- **Usage**: `uv run python phase3_experiment.py --algorithm fedprox --mu 0.01`
-- **Research notes**: [phase3_research.md](file:///C:/Users/sampr/.gemini/antigravity/scratch/federated-learning/phase3_research.md)
+- **Algorithms**: FedAvg (baseline) vs FedProx ($\mu=0.01$)
+- **Usage**: `uv run python phase3_experiment.py`
+- **Research notes**: [phase3_research.md](phase3_research.md)
 
-### Results (placeholder)
+### Results
 
 | Experiment | Final Accuracy | Best Accuracy |
 |------------|----------------|---------------|
-| FedAvg (IID) | TBD | TBD |
-| FedProx (μ=0.01) | TBD | TBD |
+| FedAvg ($\alpha=0.1$) | 9.88% | 14.03% |
+| FedProx ($\mu=0.01$) | 10.00% | 13.57% |
 
+*Note: Both algorithms hover near random-guess accuracy (~10%) under extreme non-IID skew ($\alpha=0.1$) after only 30 rounds. FedProx with $\mu=0.01$ produces slightly more stable loss curves but does not dramatically improve accuracy at this low round budget. Stronger proximal coefficients, more rounds, or techniques like SCAFFOLD would be needed for meaningful gains.*
+
+![Accuracy Comparison](results/phase3/comparison_accuracy.png)
+![Loss Comparison](results/phase3/comparison_loss.png)
 
 ## Project Structure
 
@@ -70,6 +74,10 @@ uv run python phase2_experiment.py
 | `logger.py` | CSV/JSON experiment logging |
 | `visualize_distribution.py` | Generates label distribution charts |
 | `phase2_experiment.py` | Phase 2 entry point |
+| `fedprox.py` | FedProx client with proximal term |
+| `phase3_experiment.py` | Phase 3 entry point (FedAvg vs FedProx) |
+| `phase3_research.md` | Phase 3 literature review |
+| `tests/test_fedprox.py` | Unit tests for FedProx implementation |
 
 ## Reference
 
