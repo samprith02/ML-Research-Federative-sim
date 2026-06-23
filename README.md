@@ -40,6 +40,22 @@ uv run python fedavg_baseline.py
 uv run python phase2_experiment.py
 ```
 
+## Phase 3: FedProx Experiments
+
+- **Task**: CIFAR-10
+- **Model**: ResNet-8
+- **Algorithm**: FedProx (proximal term μ)
+- **Usage**: `uv run python phase3_experiment.py --algorithm fedprox --mu 0.01`
+- **Research notes**: [phase3_research.md](file:///C:/Users/sampr/.gemini/antigravity/scratch/federated-learning/phase3_research.md)
+
+### Results (placeholder)
+
+| Experiment | Final Accuracy | Best Accuracy |
+|------------|----------------|---------------|
+| FedAvg (IID) | TBD | TBD |
+| FedProx (μ=0.01) | TBD | TBD |
+
+
 ## Project Structure
 
 | File | Description |
